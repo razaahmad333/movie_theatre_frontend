@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Movie Theatre</title>
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.0/dist/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.debug.js"
+            integrity="sha384-NaWTHo/8YCBYJ59830LTz/P4aQZK1sS0SneOgAvhsIl3zBu8r9RevNg5lHCHAuQ/"
+            crossorigin="anonymous"></script>
+        <style>
+        </style>
+
+    </head>
+
+    <body>
+
+        <!-- <div class="col-md-4 mb-4" id="ticket">
+            <div class="card bg-light p-2">
+                <img src="#" class="card-img-top" style="width:200px; margin:auto; border-radius:10px;" alt="Movie 3">
+                <div class="card-body" style="height:230px;">
+                    <h5 class="card-title" id="movie-title">${movie_title}</h5>
+                    <p class="card-text" id="movie-description">${truncateString(movie_description, 50)}</p>
+                    <p class="card-text">Showtime: <span class="text-primary"
+                            id="showtime">${formatDate(show_date)}</span></p>
+                    <p class="card-text">Seat Number: <span class="text-danger" id="seat-number"></span>
+                    </p>
+                </div>
+            </div>
+        </div> -->
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; width:100vw;"
+            id="ticket">
+            <div
+                style="background-color: #f8f9fa; padding: 2rem; border-radius: 10px; display: flex; flex-direction: column; align-items: center;">
+                <img src="#" id="qr" style="width: 50px; margin: auto; border-radius: 10px;" alt="Movie 3">
+                <div class="card-body"
+                    style="height: 230px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <h5 class="card-title" id="movie-title" style="font-size: 1.25rem; font-weight: bold;">
+                        ${movie_title}</h5>
+                    <p class="card-text" id="movie-description" style="font-size: 1rem;">
+                        ${truncateString(movie_description, 50)}</p>
+                    <p class="card-text">Showtime: <span class="text-primary" id="showtime"
+                            style="color: #007bff;">${formatDate(show_date)}</span></p>
+                    <p class="card-text">Seat Number: <span class="text-danger" id="seat-number"
+                            style="color: #dc3545;"></span></p>
+                </div>
+            </div>
+        </div>
+        <script>
+
+            $(document).ready(function () {
+                fetchTicket()
+            })
+
+            function fetchTicket() {
+                const API_BASE_URL = 'http://localhost/movie_theatre/api/tickets/'
+                $.ajax(
+                    {
+                        url: `${API_BASE_URL}?ticket_id=${getTicketId()}`,
+                        type: 'GET',
+                        success: function (ticket) {
+                            populateTicketTemplate(ticket)
+                        }
+                    }
+                )
+            }
+
+            function populateTicketTemplate(ticket) {
+                $("#ticket #qr").attr("src", generateQRCodeURL(ticket))
+                $("#ticket #movie-title").text(ticket.movie_title)
+                $("#ticket #movie-description").text(ticket.movie_description)
+                $("#ticket #showtime").text(formatDate(ticket.show_date))
+                $("#ticket #seat-number").text(ticket.seat_number)
+
+
+                const pdfdoc = new jsPDF()
+
+                pdfdoc.fromHTML($('#ticket').html(), 15, 15, {
+                    'width': 70,
+                },
+                    function () {
+                        pdfdoc.save(`ticket-${ticket.id}.pdf`)
+                        window.location.href = "/account/myTickets"
+                    }
+                )
+
+            }
+
+            function getTicketId() {
+                const urlParams = new URLSearchParams(window.location.search)
+                return urlParams.get('ticketId')
+            }
+
+
+            function generateQRCodeURL(ticket_) {
+                const ticket = { ...ticket_ }
+                delete ticket.id
+                delete ticket.movie_description
+                const encodedData = encodeURIComponent(JSON.stringify(ticket))
+                const qrCodeURL = `https://chart.googleapis.com/chart?chs=50x50&cht=qr&chl=${encodedData}&choe=UTF-8`
+                return qrCodeURL
+            }
+
+            function formatDate(date) {
+                const dateObj = new Date(date)
+                return dateObj.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                })
+            }
+
+        </script>
+    </body>
+
+</html>
